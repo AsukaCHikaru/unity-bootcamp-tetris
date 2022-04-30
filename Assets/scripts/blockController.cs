@@ -5,38 +5,57 @@ using UnityEngine;
 public class blockController : MonoBehaviour
 {
 
-    private Rigidbody2D rigidbody;
-    private BoxCollider2D collider;
+    private float fallInterval = 0.2f;
     public float moveSpeed = 5.0f;
     private bool isStopped = false;
+    private bool isDescendCalled = false;
+    private IEnumerator blockDescendCoroutine;
     
     void Start()
     {
-        rigidbody = GetComponent<Rigidbody2D>();
-        collider = GetComponent<BoxCollider2D>();
+        
     }
 
     void FixedUpdate() {
         if (Input.GetKey(KeyCode.A)) {
-            transform.position += new Vector3(-1, 0) * moveSpeed * Time.deltaTime;
+            transform.position = new Vector3(Mathf.Round(transform.position.x - 1), transform.position.y, transform.position.z);
         }
 
         if (Input.GetKey(KeyCode.D)) {
-            transform.position += new Vector3(1, 0) * moveSpeed * Time.deltaTime;
+            transform.position = new Vector3(Mathf.Round(transform.position.x + 1), transform.position.y, transform.position.z);
         }
 
         if (Input.GetKey(KeyCode.W)) {
             transform.Rotate(0, 0, 90f);
         }
 
-        if (!isStopped) {
-            transform.position += new Vector3(0, -1) * moveSpeed * Time.deltaTime;
+        if (!isDescendCalled) {
+            DescendBlock();
         }
 
     }
 
+    void DescendBlock () {
+        blockDescendCoroutine = DescendBlockCoroutine();
+        StartCoroutine(blockDescendCoroutine);
+        isDescendCalled = true;
+        Debug.Log("descend block");
+    }
+
+    IEnumerator DescendBlockCoroutine () { 
+        while (!isStopped) {
+            yield return new WaitForSeconds(fallInterval);
+            transform.position = new Vector3(transform.position.x, Mathf.Round(transform.position.y - 1), transform.position.z);
+            Debug.Log(transform.position);
+        }
+    }
+
     void OnCollisionEnter2D (Collision2D collision){
         Debug.Log(collision.transform.name);
-        // isStopped = true;
+        if (collision.transform.name != "wall top") { 
+            isStopped = true;
+            Debug.Log("stop coroutine");
+            StopCoroutine(blockDescendCoroutine);
+        }
     }
 }
