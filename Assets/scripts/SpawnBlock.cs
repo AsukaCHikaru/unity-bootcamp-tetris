@@ -19,7 +19,6 @@ public class SpawnBlock : MonoBehaviour
     }
 
     public void resetIsSpawned() {
-        Debug.Log("reset is spawned");
         isSpawned = false;
     }
 
