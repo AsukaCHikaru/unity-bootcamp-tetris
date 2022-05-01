@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Tetrominoes;
 
 public enum BlockTypeList 
 {
@@ -15,10 +16,9 @@ public enum BlockTypeList
 
 public class BlockController : MonoBehaviour
 {
-    int[,,] blockPositionMap = new int[,,] { 
-        { { 0, 2 }, { 0, 1 }, { 1, 1 }, { 1, 0 } }, 
-        { { 2, 1 }, { 1, 1 }, { 1, 0 }, { 0, 0 } }, 
-    };
+    PositionMap positionMap = new PositionMap();
+    int[,,] map;
+    
     int rotateIndex = 0;
     private float fallInterval = 0.2f;
     public float moveSpeed = 5.0f;
@@ -44,6 +44,7 @@ public class BlockController : MonoBehaviour
 
     void Start() {
         spawnBlock = GameObject.Find("GameController").GetComponent<SpawnBlock>();
+        map = positionMap.GetMap(blockType);
     }
 
     void FixedUpdate() {
@@ -81,13 +82,13 @@ public class BlockController : MonoBehaviour
     }
 
     void Rotate () {
-        if (rotateIndex == 1) {
+        if (rotateIndex == (map.Length/8) - 1) {
             rotateIndex = 0;
         } else {
             rotateIndex++;
         }
         for (var i = 0; i < 4; i++) {
-            childBlockList[i].transform.localPosition = new Vector3(blockPositionMap[rotateIndex,i,0], blockPositionMap[rotateIndex,i,1], -1);
+            childBlockList[i].transform.localPosition = new Vector3(map[rotateIndex,i,0], map[rotateIndex,i,1], 0);
         }
     }
 
@@ -107,15 +108,28 @@ public class BlockController : MonoBehaviour
     }
 
     void CheckCanMove () {
-        bool isGoalOccupied = parentLoc.y <= -9f;
+        bool isBottomOccupied = false;
         foreach(Transform block in transform) {
             SingleBlock singleBlock = block.GetComponent<SingleBlock>();
             GameObject goalBlock = GameObject.Find($"{singleBlock.x},{singleBlock.y - 1}");
+
+            if (singleBlock.y == -9) {
+                isBottomOccupied = true;
+            }
+
+            if (singleBlock.x == -5) {
+                isContactingWallLeft = true;
+            }
+
+            if (singleBlock.x == 4) {
+                isContactingWallRight = true;
+            }
+
             if (goalBlock != null && goalBlock.transform.parent != transform) {
-                isGoalOccupied = true;
+                isBottomOccupied = true;
             }
         }
-        if (isGoalOccupied) {
+        if (isBottomOccupied) {
             isContactingWallBottom = true;
             StopCoroutine(blockDescendCoroutine);
             spawnBlock.resetIsSpawned();
@@ -127,9 +141,7 @@ public class BlockController : MonoBehaviour
         foreach(Transform block in transform) {
             SingleBlock singleBlock = block.GetComponent<SingleBlock>();
             Vector3 blockLoc = new Vector3(parentLoc.x + block.localPosition.x, parentLoc.y + block.localPosition.y, 0);
-            block.name = $"{(int)blockLoc.x},{(int)blockLoc.y}";
-            singleBlock.x = (int)blockLoc.x;
-            singleBlock.y = (int)blockLoc.y;
+            singleBlock.RegisterBlockPos(blockLoc);
         }
     }
 

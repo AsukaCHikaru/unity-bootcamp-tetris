@@ -17,4 +17,10 @@ public class SingleBlock : MonoBehaviour
     {
         
     }
+
+    public void RegisterBlockPos (Vector3 blockPosition) {
+        x = (int)blockPosition.x;
+        y = (int)blockPosition.y;
+        transform.name = $"{x},{y}";
+    }
 }
