@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Tetrominoes;
 
-public enum BlockTypeList 
-{
+public enum BlockTypeList {
     I_block,
     S_block,
     Z_block,
@@ -14,17 +13,14 @@ public enum BlockTypeList
     T_block,
 };
 
-public class BlockController : MonoBehaviour
-{
+public class BlockController : MonoBehaviour {
     PositionMap positionMap = new PositionMap();
     int[,,] map;
-    
+
     int rotateIndex = 0;
-    private float fallInterval = 0.2f;
+    private float fallInterval = 0.5f;
     public float moveSpeed = 5.0f;
-    private bool isContactingWallBottom = false;
-    private bool isContactingWallRight = false;
-    private bool isContactingWallLeft = false;
+    private bool isBottomOccupied = false;
     private bool isDescendCalled = false;
     private float inputInterval = 0.2f;
     private bool isInInputInterval = false;
@@ -49,46 +45,58 @@ public class BlockController : MonoBehaviour
 
     void FixedUpdate() {
         GetInput();
+        CheckCanDescend();
 
         if (!isDescendCalled) {
             DescendBlock();
         }
+
+        if (isBottomOccupied) {
+            spawnBlock.resetIsSpawned();
+            Destroy(this);
+        }
     }
 
-    void GetInput () {
+    void GetInput() {
         if (Input.GetKey(KeyCode.A)) {
-            if (!isInInputInterval && !isContactingWallLeft && !isContactingWallBottom) {
+            bool _isLeftOccupied = CheckLeftCanMove();
+            if (!isInInputInterval && !_isLeftOccupied && !isBottomOccupied) {
                 _inputIntervalCoroutine = InputIntervalCoroutine();
                 StartCoroutine(_inputIntervalCoroutine);
                 transform.position = new Vector3(transform.position.x - 1f, transform.position.y, transform.position.z);
+                Register();
             }
         }
 
         if (Input.GetKey(KeyCode.D)) {
-            if (!isInInputInterval && !isContactingWallRight && !isContactingWallBottom) {
+            bool _isRightOccupied = CheckRightCanMove();
+            if (!isInInputInterval && !_isRightOccupied && !isBottomOccupied) {
                 _inputIntervalCoroutine = InputIntervalCoroutine();
                 StartCoroutine(_inputIntervalCoroutine);
                 transform.position = new Vector3(transform.position.x + 1f, transform.position.y, transform.position.z);
+                Register();
             }
         }
 
         if (Input.GetKey(KeyCode.W)) {
-            if (!isInInputInterval && !isContactingWallBottom) {
+            if (!isInInputInterval && !isBottomOccupied) {
                 _inputIntervalCoroutine = InputIntervalCoroutine();
                 StartCoroutine(_inputIntervalCoroutine);
                 Rotate();
+                Register();
             }
         }
     }
 
-    void Rotate () {
-        if (rotateIndex == (map.Length/8) - 1) {
+    void Rotate() {
+        if (rotateIndex == (map.Length / 8) - 1) {
             rotateIndex = 0;
-        } else {
+        }
+        else {
             rotateIndex++;
         }
         for (var i = 0; i < 4; i++) {
-            childBlockList[i].transform.localPosition = new Vector3(map[rotateIndex,i,0], map[rotateIndex,i,1], 0);
+            childBlockList[i].transform.localPosition = new Vector3(map[rotateIndex, i, 0], map[rotateIndex, i, 1], 0);
         }
     }
 
@@ -99,49 +107,62 @@ public class BlockController : MonoBehaviour
     }
 
     IEnumerator DescendBlockCoroutine() {
-        while (!isContactingWallBottom) {
-            yield return new WaitForSeconds(fallInterval);
+        while (!isBottomOccupied) {
             transform.position = new Vector3(transform.position.x, Mathf.Ceil(transform.position.y - 1) - 0.5f, transform.position.z);
             Register();
-            CheckCanMove();
+            yield return new WaitForSeconds(fallInterval);
         }
     }
 
-    void CheckCanMove () {
-        bool isBottomOccupied = false;
-        foreach(Transform block in transform) {
+    private bool CheckRightCanMove() {
+        bool isRightOccupied = false;
+        foreach (Transform block in transform) {
             SingleBlock singleBlock = block.GetComponent<SingleBlock>();
-            GameObject goalBlock = GameObject.Find($"{singleBlock.x},{singleBlock.y - 1}");
+            GameObject rightGoalBlock = GameObject.Find($"{singleBlock.x + 1},{singleBlock.y}");
+            if (singleBlock.x >= 4 || (rightGoalBlock != null && rightGoalBlock.transform.parent != transform)) {
+                isRightOccupied = true;
+            }
+        }
+        return isRightOccupied;
+    }
+
+    private bool CheckLeftCanMove() {
+        bool isLeftOccupied = false;
+        foreach (Transform block in transform) {
+            SingleBlock singleBlock = block.GetComponent<SingleBlock>();
+            GameObject leftGoalBlock = GameObject.Find($"{singleBlock.x - 1},{singleBlock.y}");
+            if (singleBlock.x <= -5 || (leftGoalBlock != null && leftGoalBlock.transform.parent != transform)) {
+                isLeftOccupied = true;
+            }
+        }
+        return isLeftOccupied;
+    }
+
+    void CheckCanDescend() {
+        foreach (Transform block in transform) {
+            SingleBlock singleBlock = block.GetComponent<SingleBlock>();
+            GameObject bottomGoalBlock = GameObject.Find($"{singleBlock.x},{singleBlock.y - 1}");
 
             if (singleBlock.y == -9) {
                 isBottomOccupied = true;
             }
 
-            if (singleBlock.x == -5) {
-                isContactingWallLeft = true;
-            }
-
-            if (singleBlock.x == 4) {
-                isContactingWallRight = true;
-            }
-
-            if (goalBlock != null && goalBlock.transform.parent != transform) {
+            if (bottomGoalBlock != null && bottomGoalBlock.transform.parent != transform) {
                 isBottomOccupied = true;
             }
         }
-        if (isBottomOccupied) {
-            isContactingWallBottom = true;
-            StopCoroutine(blockDescendCoroutine);
-            spawnBlock.resetIsSpawned();
-        }
     }
 
-    void Register () {
+    void Register() {
         parentLoc = new Vector3(transform.position.x - 0.5f, transform.position.y - 0.5f, 0);
-        foreach(Transform block in transform) {
+        foreach (Transform block in transform) {
             SingleBlock singleBlock = block.GetComponent<SingleBlock>();
             Vector3 blockLoc = new Vector3(parentLoc.x + block.localPosition.x, parentLoc.y + block.localPosition.y, 0);
             singleBlock.RegisterBlockPos(blockLoc);
+        }
+        if (isBottomOccupied) {
+            StopCoroutine(blockDescendCoroutine);
+            spawnBlock.resetIsSpawned();
         }
     }
 
@@ -149,22 +170,5 @@ public class BlockController : MonoBehaviour
         isInInputInterval = true;
         yield return new WaitForSeconds(inputInterval);
         isInInputInterval = false;
-    }
-
-    void OnCollisionEnter2D(Collision2D collision) {
-        Debug.Log($"{collision.transform.name} from {transform.name}");
-        if (collision.transform.name == "wall bottom") {
-            // isContactingWallBottom = true;
-            // rigidbody.bodyType = RigidbodyType2D.Static;
-            
-        }
-
-        if (collision.transform.name == "wall right") {
-            // isContactingWallRight = true;
-        }
-
-        if (collision.transform.name == "wall left") {
-            // isContactingWallLeft = true;
-        }
     }
 }
