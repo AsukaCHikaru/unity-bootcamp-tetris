@@ -30,6 +30,8 @@ public class BlockController : MonoBehaviour {
     private bool isInInputInterval = false;
     private IEnumerator blockDescendCoroutine;
     private IEnumerator _inputIntervalCoroutine;
+    int startInputInt = 0;
+    bool canSpeedDescend = false;
 
     [SerializeField]
     private Vector3 parentLoc;
@@ -45,6 +47,14 @@ public class BlockController : MonoBehaviour {
     void Start() {
         spawnBlock = GameObject.Find("GameController").GetComponent<SpawnBlock>();
         map = positionMap.GetMap(blockType);
+    }
+
+    private void Update() {
+        if (startInputInt < 60) {
+            startInputInt++;
+
+        }
+        else { canSpeedDescend = true; }
     }
 
     void FixedUpdate() {
@@ -87,6 +97,14 @@ public class BlockController : MonoBehaviour {
                 _inputIntervalCoroutine = InputIntervalCoroutine();
                 StartCoroutine(_inputIntervalCoroutine);
                 Rotate();
+            }
+        }
+
+        if (Input.GetKey(KeyCode.S)) {
+            if (!isInInputInterval && !isBottomOccupied && canSpeedDescend) {
+                _inputIntervalCoroutine = InputIntervalCoroutine();
+                StartCoroutine(_inputIntervalCoroutine);
+                SpeedDescendBlock();
             }
         }
     }
@@ -146,6 +164,26 @@ public class BlockController : MonoBehaviour {
             childBlockList[2].transform.localPosition = newPosList[2];
             childBlockList[3].transform.localPosition = newPosList[3];
             Register();
+        }
+    }
+
+    void SpeedDescendBlock() {
+        for (int y = -9; y < (int)(transform.position.y - 0.5f); y++) {
+            bool canDescend = true;
+            for (int i = 0; i < 4; i++) {
+                GameObject block = childBlockList[i];
+                Vector3 pos = new Vector3(transform.position.x - 0.5f + block.transform.localPosition.x, y + block.transform.localPosition.y, 0);
+                GameObject blockInGoal = GameObject.Find($"{pos.x},{pos.y}");
+                if ((blockInGoal != null && blockInGoal.transform.parent != transform) || pos.y < BOTTOM_WALL_Y) {
+                    canDescend = false;
+                }
+            }
+            if (canDescend) {
+                transform.position = new Vector3(transform.position.x, y + 0.5f, 0);
+                isBottomOccupied = true;
+                Register();
+                break;
+            }
         }
     }
 
