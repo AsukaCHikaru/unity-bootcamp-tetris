@@ -17,6 +17,10 @@ public class BlockController : MonoBehaviour {
     PositionMap positionMap = new PositionMap();
     int[,,] map;
 
+    int RIGHT_WALL_X = 4;
+    int LEFT_WALL_X = -5;
+    int BOTTOM_WALL_Y = -9;
+
     int rotateIndex = 0;
     private float fallInterval = 0.5f;
     public float moveSpeed = 5.0f;
@@ -83,7 +87,6 @@ public class BlockController : MonoBehaviour {
                 _inputIntervalCoroutine = InputIntervalCoroutine();
                 StartCoroutine(_inputIntervalCoroutine);
                 Rotate();
-                Register();
             }
         }
     }
@@ -95,8 +98,54 @@ public class BlockController : MonoBehaviour {
         else {
             rotateIndex++;
         }
+
+        List<Vector3> newPosList = new List<Vector3>();
+        int newPosOverRightWallLevel = 0;
+        int newPosOverLeftWallLevel = 0;
+        int newPosOverBottomWallLevel = 0;
+
         for (var i = 0; i < 4; i++) {
-            childBlockList[i].transform.localPosition = new Vector3(map[rotateIndex, i, 0], map[rotateIndex, i, 1], 0);
+            Vector3 localNewPos = new Vector3(map[rotateIndex, i, 0], map[rotateIndex, i, 1], 0);
+            Vector3 newPos = new Vector3(transform.position.x - 0.5f + localNewPos.x, transform.position.y - 0.5f + localNewPos.y, transform.position.z);
+
+            if (newPos.x >= RIGHT_WALL_X + 1) {
+                newPosOverRightWallLevel = Mathf.Max(newPosOverRightWallLevel, (int)(newPos.x) - RIGHT_WALL_X);
+            }
+            if (newPos.x <= LEFT_WALL_X - 1) {
+                newPosOverLeftWallLevel = Mathf.Abs(Mathf.Min(newPosOverLeftWallLevel, (int)(newPos.x) - LEFT_WALL_X));
+            }
+            if (newPos.y <= BOTTOM_WALL_Y - 1) {
+                newPosOverBottomWallLevel = Mathf.Abs(Mathf.Min(newPosOverBottomWallLevel, (int)(newPos.y) - BOTTOM_WALL_Y));
+            }
+            newPosList.Add(localNewPos);
+        }
+        Debug.Log($"{newPosOverRightWallLevel},{newPosOverRightWallLevel},{newPosOverBottomWallLevel}");
+
+        if (newPosOverRightWallLevel > 0) {
+            transform.position = new Vector3(transform.position.x - newPosOverRightWallLevel, transform.position.y, transform.position.z);
+        }
+        if (newPosOverLeftWallLevel > 0) {
+            transform.position = new Vector3(transform.position.x + newPosOverLeftWallLevel, transform.position.y, transform.position.z);
+        }
+        if (newPosOverBottomWallLevel > 0) {
+            transform.position = new Vector3(transform.position.x, transform.position.y + newPosOverBottomWallLevel, transform.position.z);
+        }
+
+        bool canRotate = true;
+        for (var i = 0; i < 4; i++) {
+            Vector3 pos = newPosList[i];
+            GameObject blockInPos = GameObject.Find($"{(int)pos.x},{(int)pos.y}");
+            if (blockInPos != null && blockInPos.transform.parent != transform) {
+                canRotate = false;
+            }
+        }
+
+        if (canRotate) {
+            childBlockList[0].transform.localPosition = newPosList[0];
+            childBlockList[1].transform.localPosition = newPosList[1];
+            childBlockList[2].transform.localPosition = newPosList[2];
+            childBlockList[3].transform.localPosition = newPosList[3];
+            Register();
         }
     }
 
