@@ -125,28 +125,33 @@ public class BlockController : MonoBehaviour {
         for (var i = 0; i < 4; i++) {
             Vector3 localNewPos = new Vector3(map[rotateIndex, i, 0], map[rotateIndex, i, 1], 0);
             Vector3 newPos = new Vector3(transform.position.x - 0.5f + localNewPos.x, transform.position.y - 0.5f + localNewPos.y, transform.position.z);
-
-            if (newPos.x >= RIGHT_WALL_X + 1) {
+            GameObject blockInRight = GameObject.Find($"{newPos.x + 1},{newPos.y}");
+            GameObject blockInLeft = GameObject.Find($"{newPos.x - 1},{newPos.y}");
+            GameObject blockInBottom = GameObject.Find($"{newPos.x},{newPos.y - 1}");
+            Debug.Log($"{newPos.x},{newPos.y}");
+            if (newPos.x >= RIGHT_WALL_X + 1 || (blockInRight != null && blockInRight.transform.parent != transform)) {
                 newPosOverRightWallLevel = Mathf.Max(newPosOverRightWallLevel, (int)(newPos.x) - RIGHT_WALL_X);
             }
-            if (newPos.x <= LEFT_WALL_X - 1) {
+            if (newPos.x <= LEFT_WALL_X - 1 || (blockInLeft != null && blockInLeft.transform.parent != transform)) {
                 newPosOverLeftWallLevel = Mathf.Abs(Mathf.Min(newPosOverLeftWallLevel, (int)(newPos.x) - LEFT_WALL_X));
             }
-            if (newPos.y <= BOTTOM_WALL_Y - 1) {
+            if (newPos.y <= BOTTOM_WALL_Y - 1 || (blockInBottom != null && blockInBottom.transform.parent != transform)) {
                 newPosOverBottomWallLevel = Mathf.Abs(Mathf.Min(newPosOverBottomWallLevel, (int)(newPos.y) - BOTTOM_WALL_Y));
             }
             newPosList.Add(localNewPos);
         }
         Debug.Log($"{newPosOverRightWallLevel},{newPosOverRightWallLevel},{newPosOverBottomWallLevel}");
 
+        Vector3 newParentPos = new Vector3(transform.position.x, transform.position.y, transform.position.z);
+
         if (newPosOverRightWallLevel > 0) {
-            transform.position = new Vector3(transform.position.x - newPosOverRightWallLevel, transform.position.y, transform.position.z);
+            newParentPos = new Vector3(transform.position.x - newPosOverRightWallLevel, transform.position.y, transform.position.z);
         }
         if (newPosOverLeftWallLevel > 0) {
-            transform.position = new Vector3(transform.position.x + newPosOverLeftWallLevel, transform.position.y, transform.position.z);
+            newParentPos = new Vector3(transform.position.x + newPosOverLeftWallLevel, transform.position.y, transform.position.z);
         }
         if (newPosOverBottomWallLevel > 0) {
-            transform.position = new Vector3(transform.position.x, transform.position.y + newPosOverBottomWallLevel, transform.position.z);
+            newParentPos = new Vector3(transform.position.x, transform.position.y + newPosOverBottomWallLevel, transform.position.z);
         }
 
         bool canRotate = true;
@@ -159,6 +164,7 @@ public class BlockController : MonoBehaviour {
         }
 
         if (canRotate) {
+            transform.position = newParentPos;
             childBlockList[0].transform.localPosition = newPosList[0];
             childBlockList[1].transform.localPosition = newPosList[1];
             childBlockList[2].transform.localPosition = newPosList[2];
