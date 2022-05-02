@@ -31,6 +31,7 @@ public class SpawnBlock : MonoBehaviour
         isSpawned = true;
         GameObject blockType = getRandomBlock();
         Vector3 spawnLocation = GameObject.Find("DefaultSpawnLocation").transform.Find(blockType.name).transform.position;
-        Instantiate(blockType, spawnLocation, Quaternion.Euler(0, 0, 0));
+        GameObject newTetromino = Instantiate(blockType, new Vector3(spawnLocation.x, spawnLocation.y, 0), Quaternion.identity);
+        newTetromino.transform.parent = GameObject.Find("Blocks").transform;
     }
 }
