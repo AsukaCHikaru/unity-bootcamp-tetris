@@ -35,11 +35,11 @@ public class SingleBlock : MonoBehaviour {
             if (spriteColor.a < 0.1) {
                 spriteRenderer.color = new Color(spriteColor.r, spriteColor.g, spriteColor.b, 0);
                 StopCoroutine(_transparentCoroutine);
+                GameObject.Find("GameController").GetComponent<RepositionBlock>().Move();
                 Destroy(this.gameObject);
             }
             else {
                 spriteRenderer.color = new Color(spriteColor.r, spriteColor.g, spriteColor.b, spriteColor.a - 0.05f);
-                Debug.Log($"opacity {spriteColor.a}");
             }
         }
     }

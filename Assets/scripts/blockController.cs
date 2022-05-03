@@ -31,6 +31,7 @@ public class BlockController : MonoBehaviour {
     private IEnumerator _inputIntervalCoroutine;
     int startInputInt = 0;
     bool canSpeedDescend = false;
+    public bool isSpawned = false;
 
     [SerializeField]
     private Vector3 parentLoc;
@@ -39,7 +40,7 @@ public class BlockController : MonoBehaviour {
     private List<GameObject> childBlockList;
 
     [SerializeField]
-    private BlockTypeList blockType;
+    public BlockTypeList blockType;
 
     SpawnBlock spawnBlock;
     ScoreController scoreController;
@@ -50,7 +51,6 @@ public class BlockController : MonoBehaviour {
         scoreController = gameController.GetComponent<ScoreController>();
 
         map = positionMap.GetMap(blockType);
-        CalculatePossibleBottomPos();
     }
 
     private void Update() {
@@ -62,11 +62,19 @@ public class BlockController : MonoBehaviour {
     }
 
     void FixedUpdate() {
+        if (!isSpawned) {
+            return;
+        }
         GetInput();
 
         if (!isDescendCalled) {
             DescendBlock();
         }
+    }
+
+    public void Spawn () {
+        isSpawned = true;
+        CalculatePossibleBottomPos();
     }
 
     void GetInput() {

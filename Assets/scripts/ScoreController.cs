@@ -8,9 +8,12 @@ public class ScoreController : MonoBehaviour {
     TetrominoConstants tetrominoConsts = new TetrominoConstants();
     int score = 0;
     TextMeshProUGUI text;
+    bool blockDestroyed = false;
+    public int? highestCompletedY;
+    public int completedLines = 0;
 
     void Start() {
-        text = GameObject.Find("score_textUI").GetComponent<TextMeshProUGUI>();
+        text = GameObject.Find("score_ui").transform.Find("text").GetComponent<TextMeshProUGUI>();
     }
 
     public void CheckCompleteLine() {
@@ -24,13 +27,14 @@ public class ScoreController : MonoBehaviour {
                 }
             }
             if (row.Count == (tetrominoConsts.RIGHT_WALL_X - 1) - (tetrominoConsts.LEFT_WALL_X + 1) + 1) {
+                highestCompletedY = y;
                 all.AddRange(row);
             }
         }
         
-        int numCompletedLines = all.Count / 10;
-        if (numCompletedLines >= 1) {
-            CalculateScore(numCompletedLines);
+        completedLines = all.Count / 10;
+        if (completedLines >= 1) {
+            CalculateScore(completedLines);
         }
         
         foreach(GameObject block in all) {
@@ -42,4 +46,10 @@ public class ScoreController : MonoBehaviour {
         score += numCompletedLines * 100;
         text.text = score.ToString();
     }
+
+    public void Reset () {
+        highestCompletedY = null;
+        completedLines = 0;
+    }
+
 }
