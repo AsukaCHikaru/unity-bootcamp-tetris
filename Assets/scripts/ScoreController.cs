@@ -7,7 +7,7 @@ using TMPro;
 public class ScoreController : MonoBehaviour {
     TetrominoConstants tetrominoConsts = new TetrominoConstants();
     SpawnBlock spawnBlock;
-    int score = 0;
+    public int score = 0;
     TextMeshProUGUI text;
     public int? highestCompletedY;
     public int completedLines = 0;
