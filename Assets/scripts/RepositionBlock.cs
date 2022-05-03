@@ -5,9 +5,11 @@ using UnityEngine;
 public class RepositionBlock : MonoBehaviour {
     bool isMoving = false;
     ScoreController scoreController;
+    SpawnBlock spawnBlock;
 
     private void Start() {
         scoreController = GetComponent<ScoreController>();
+        spawnBlock = GetComponent<SpawnBlock>();
     }
 
     public void Move() {
@@ -31,6 +33,7 @@ public class RepositionBlock : MonoBehaviour {
         }
 
         scoreController.Reset();
+        spawnBlock.resetIsSpawned();
         isMoving = false;
     }
 }

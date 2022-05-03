@@ -37,6 +37,7 @@ public class SpawnBlock : MonoBehaviour {
     }
 
     void Spawn() {
+        Debug.Log("spawn");
         isSpawned = true;
         GameObject block = nextBlockList[0];
         BlockController blockController = block.GetComponent<BlockController>();

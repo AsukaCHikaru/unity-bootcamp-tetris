@@ -6,14 +6,15 @@ using TMPro;
 
 public class ScoreController : MonoBehaviour {
     TetrominoConstants tetrominoConsts = new TetrominoConstants();
+    SpawnBlock spawnBlock;
     int score = 0;
     TextMeshProUGUI text;
-    bool blockDestroyed = false;
     public int? highestCompletedY;
     public int completedLines = 0;
 
     void Start() {
         text = GameObject.Find("score_ui").transform.Find("text").GetComponent<TextMeshProUGUI>();
+        spawnBlock = GetComponent<SpawnBlock>();
     }
 
     public void CheckCompleteLine() {
@@ -35,6 +36,8 @@ public class ScoreController : MonoBehaviour {
         completedLines = all.Count / 10;
         if (completedLines >= 1) {
             CalculateScore(completedLines);
+        } else {
+            spawnBlock.resetIsSpawned();
         }
         
         foreach(GameObject block in all) {

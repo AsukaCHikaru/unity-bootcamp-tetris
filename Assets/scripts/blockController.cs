@@ -45,10 +45,13 @@ public class BlockController : MonoBehaviour {
     SpawnBlock spawnBlock;
     ScoreController scoreController;
 
+    GameOver gameOver;
+
     void Start() {
         GameObject gameController = GameObject.Find("GameController");
         spawnBlock = gameController.GetComponent<SpawnBlock>();
         scoreController = gameController.GetComponent<ScoreController>();
+        gameOver = gameController.GetComponent<GameOver>();
 
         map = positionMap.GetMap(blockType);
     }
@@ -62,7 +65,7 @@ public class BlockController : MonoBehaviour {
     }
 
     void FixedUpdate() {
-        if (!isSpawned) {
+        if (!isSpawned || gameOver.isGameOver) {
             return;
         }
         GetInput();
@@ -72,9 +75,13 @@ public class BlockController : MonoBehaviour {
         }
     }
 
-    public void Spawn () {
-        isSpawned = true;
-        CalculatePossibleBottomPos();
+    public void Spawn() {
+        Register();
+        CheckGameOver();
+        if (!gameOver.isGameOver) {
+            CalculatePossibleBottomPos();
+            isSpawned = true;
+        }
     }
 
     void GetInput() {
@@ -212,6 +219,7 @@ public class BlockController : MonoBehaviour {
     }
 
     void SpeedDescendBlock() {
+        StopCoroutine(blockDescendCoroutine);
         transform.position = GameObject.Find($"previewBlock_2").transform.position;
         Register();
         CheckReachBottom();
@@ -225,12 +233,12 @@ public class BlockController : MonoBehaviour {
     }
 
     IEnumerator DescendBlockCoroutine() {
-        while (!isBottomOccupied) {
+        while (!isBottomOccupied && !gameOver.isGameOver) {
+            yield return new WaitForSeconds(fallInterval);
             transform.position = new Vector3(transform.position.x, Mathf.Ceil(transform.position.y - 1) - 0.5f, transform.position.z);
             Register();
             CheckReachBottom();
             CheckLock();
-            yield return new WaitForSeconds(fallInterval);
         }
     }
 
@@ -281,16 +289,19 @@ public class BlockController : MonoBehaviour {
     }
 
     void Lock() {
+        Debug.Log("lock");
         isLocked = true;
 
-        childBlockList[0].transform.parent = GameObject.Find("LockedBlocks").transform;
-        childBlockList[1].transform.parent = GameObject.Find("LockedBlocks").transform;
-        childBlockList[2].transform.parent = GameObject.Find("LockedBlocks").transform;
-        childBlockList[3].transform.parent = GameObject.Find("LockedBlocks").transform;
+        CheckGameOver();
 
-        scoreController.CheckCompleteLine();
-        spawnBlock.resetIsSpawned();
-        Destroy(this.gameObject);
+        if (!gameOver.isGameOver) {
+            childBlockList[0].transform.parent = GameObject.Find("LockedBlocks").transform;
+            childBlockList[1].transform.parent = GameObject.Find("LockedBlocks").transform;
+            childBlockList[2].transform.parent = GameObject.Find("LockedBlocks").transform;
+            childBlockList[3].transform.parent = GameObject.Find("LockedBlocks").transform;
+            scoreController.CheckCompleteLine();
+            Destroy(this.gameObject);
+        }
     }
 
 
@@ -307,5 +318,21 @@ public class BlockController : MonoBehaviour {
         isInInputInterval = true;
         yield return new WaitForSeconds(inputInterval);
         isInInputInterval = false;
+    }
+
+    void CheckGameOver() {
+        foreach (Transform block in transform) {
+            SingleBlock singleBlock = block.GetComponent<SingleBlock>();
+            GameObject[] blocksInPos = GameObject.FindGameObjectsWithTag("Block");
+            int numBlocksInSamePos = 0;
+            foreach(GameObject block2 in blocksInPos) {
+                if (block2.name == $"{singleBlock.x},{singleBlock.y}") {
+                    numBlocksInSamePos++;
+                }
+            }
+            if (singleBlock.y >= tetrominoConsts.TOP_WALL_Y || numBlocksInSamePos > 1) {
+                gameOver.Over();
+            }
+        }
     }
 }
