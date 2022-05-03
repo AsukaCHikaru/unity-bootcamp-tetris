@@ -3,7 +3,16 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace Tetrominoes {
+
+    public class TetrominoConstants {
+        public int RIGHT_WALL_X = 5;
+        public int LEFT_WALL_X = -6;
+        public int BOTTOM_WALL_Y = -10;
+        public int TOP_WALL_Y = 9;
+    }
+
     public class PositionMap {
+
         public int[,,] GetMap(BlockTypeList blockType) {
             if (blockType == BlockTypeList.I_block) {
                 int[,,] i_map = new int[,,] {

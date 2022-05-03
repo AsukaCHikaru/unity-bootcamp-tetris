@@ -16,11 +16,8 @@ public enum BlockTypeList {
 
 public class BlockController : MonoBehaviour {
     PositionMap positionMap = new PositionMap();
+    TetrominoConstants tetrominoConsts = new TetrominoConstants();
     int[,,] map;
-
-    int RIGHT_WALL_X = 5;
-    int LEFT_WALL_X = -6;
-    int BOTTOM_WALL_Y = -10;
 
     int rotateIndex = 0;
     private float fallInterval = 0.5f;
@@ -45,9 +42,13 @@ public class BlockController : MonoBehaviour {
     private BlockTypeList blockType;
 
     SpawnBlock spawnBlock;
+    ScoreController scoreController;
 
     void Start() {
-        spawnBlock = GameObject.Find("GameController").GetComponent<SpawnBlock>();
+        GameObject gameController = GameObject.Find("GameController");
+        spawnBlock = gameController.GetComponent<SpawnBlock>();
+        scoreController = gameController.GetComponent<ScoreController>();
+
         map = positionMap.GetMap(blockType);
         CalculatePossibleBottomPos();
     }
@@ -65,11 +66,6 @@ public class BlockController : MonoBehaviour {
 
         if (!isDescendCalled) {
             DescendBlock();
-        }
-
-        if (isLocked) {
-            spawnBlock.resetIsSpawned();
-            Destroy(this);
         }
     }
 
@@ -134,13 +130,13 @@ public class BlockController : MonoBehaviour {
             GameObject blockInLeft = GameObject.Find($"{newPos.x - 1},{newPos.y}");
             GameObject blockInBottom = GameObject.Find($"{newPos.x},{newPos.y - 1}");
 
-            if (newPos.x >= RIGHT_WALL_X || (blockInRight != null && blockInRight.transform.parent != transform)) {
+            if (newPos.x >= tetrominoConsts.RIGHT_WALL_X || (blockInRight != null && blockInRight.transform.parent != transform)) {
                 newPosOverRightWallLevel++;
             }
-            if (newPos.x <= LEFT_WALL_X || (blockInLeft != null && blockInLeft.transform.parent != transform)) {
+            if (newPos.x <= tetrominoConsts.LEFT_WALL_X || (blockInLeft != null && blockInLeft.transform.parent != transform)) {
                 newPosOverLeftWallLevel++;
             }
-            if (newPos.y <= BOTTOM_WALL_Y || (blockInBottom != null && blockInBottom.transform.parent != transform)) {
+            if (newPos.y <= tetrominoConsts.BOTTOM_WALL_Y || (blockInBottom != null && blockInBottom.transform.parent != transform)) {
                 newPosOverBottomWallLevel++;
             }
 
@@ -180,13 +176,13 @@ public class BlockController : MonoBehaviour {
 
     void CalculatePossibleBottomPos() {
         int lowestY = (int)parentLoc.y;
-        for (int y = (int)parentLoc.y; y > BOTTOM_WALL_Y; y--) {
+        for (int y = (int)parentLoc.y; y > tetrominoConsts.BOTTOM_WALL_Y; y--) {
             bool isValid = true;
             for (int i = 0; i < 4; i++) {
                 SingleBlock block = childBlockList[i].GetComponent<SingleBlock>();
                 Vector3 tryPos = new Vector3(parentLoc.x + map[rotateIndex, i, 0], y + map[rotateIndex, i, 1], 0);
                 GameObject blockInTryPos = GameObject.Find($"{(int)tryPos.x},{(int)tryPos.y}");
-                if (tryPos.y <= BOTTOM_WALL_Y || (blockInTryPos != null && blockInTryPos.transform.parent != transform)) {
+                if (tryPos.y <= tetrominoConsts.BOTTOM_WALL_Y || (blockInTryPos != null && blockInTryPos.transform.parent != transform)) {
 
                     isValid = false;
                 }
@@ -259,7 +255,7 @@ public class BlockController : MonoBehaviour {
             SingleBlock singleBlock = block.GetComponent<SingleBlock>();
             GameObject bottomGoalBlock = GameObject.Find($"{singleBlock.x},{singleBlock.y - 1}");
             
-            if (singleBlock.y <= BOTTOM_WALL_Y + 1 || (bottomGoalBlock != null && bottomGoalBlock.transform.parent != transform)) {
+            if (singleBlock.y <= tetrominoConsts.BOTTOM_WALL_Y + 1 || (bottomGoalBlock != null && bottomGoalBlock.transform.parent != transform)) {
                 isReachedBottom = true;
             }
         }
@@ -272,6 +268,9 @@ public class BlockController : MonoBehaviour {
         CheckReachBottom();
         if (isBottomOccupied) {
             isLocked = true;
+            spawnBlock.resetIsSpawned();
+            scoreController.CheckCompleteLine();
+            Destroy(this);
         }
     }
 
