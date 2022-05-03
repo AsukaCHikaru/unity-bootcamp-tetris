@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 using Tetrominoes;
 
@@ -17,14 +18,15 @@ public class BlockController : MonoBehaviour {
     PositionMap positionMap = new PositionMap();
     int[,,] map;
 
-    int RIGHT_WALL_X = 4;
-    int LEFT_WALL_X = -5;
-    int BOTTOM_WALL_Y = -9;
+    int RIGHT_WALL_X = 5;
+    int LEFT_WALL_X = -6;
+    int BOTTOM_WALL_Y = -10;
 
     int rotateIndex = 0;
     private float fallInterval = 0.5f;
     public float moveSpeed = 5.0f;
     private bool isBottomOccupied = false;
+    private bool isLocked = false;
     private bool isDescendCalled = false;
     private float inputInterval = 0.2f;
     private bool isInInputInterval = false;
@@ -47,6 +49,7 @@ public class BlockController : MonoBehaviour {
     void Start() {
         spawnBlock = GameObject.Find("GameController").GetComponent<SpawnBlock>();
         map = positionMap.GetMap(blockType);
+        CalculatePossibleBottomPos();
     }
 
     private void Update() {
@@ -59,13 +62,12 @@ public class BlockController : MonoBehaviour {
 
     void FixedUpdate() {
         GetInput();
-        CheckCanDescend();
 
         if (!isDescendCalled) {
             DescendBlock();
         }
 
-        if (isBottomOccupied) {
+        if (isLocked) {
             spawnBlock.resetIsSpawned();
             Destroy(this);
         }
@@ -74,21 +76,23 @@ public class BlockController : MonoBehaviour {
     void GetInput() {
         if (Input.GetKey(KeyCode.A)) {
             bool _isLeftOccupied = CheckLeftCanMove();
-            if (!isInInputInterval && !_isLeftOccupied && !isBottomOccupied) {
+            if (!isInInputInterval && !_isLeftOccupied && !isLocked) {
                 _inputIntervalCoroutine = InputIntervalCoroutine();
                 StartCoroutine(_inputIntervalCoroutine);
                 transform.position = new Vector3(transform.position.x - 1f, transform.position.y, transform.position.z);
                 Register();
+                CalculatePossibleBottomPos();
             }
         }
 
         if (Input.GetKey(KeyCode.D)) {
             bool _isRightOccupied = CheckRightCanMove();
-            if (!isInInputInterval && !_isRightOccupied && !isBottomOccupied) {
+            if (!isInInputInterval && !_isRightOccupied && !isLocked) {
                 _inputIntervalCoroutine = InputIntervalCoroutine();
                 StartCoroutine(_inputIntervalCoroutine);
                 transform.position = new Vector3(transform.position.x + 1f, transform.position.y, transform.position.z);
                 Register();
+                CalculatePossibleBottomPos();
             }
         }
 
@@ -97,6 +101,7 @@ public class BlockController : MonoBehaviour {
                 _inputIntervalCoroutine = InputIntervalCoroutine();
                 StartCoroutine(_inputIntervalCoroutine);
                 Rotate();
+                CalculatePossibleBottomPos();
             }
         }
 
@@ -124,23 +129,23 @@ public class BlockController : MonoBehaviour {
 
         for (var i = 0; i < 4; i++) {
             Vector3 localNewPos = new Vector3(map[rotateIndex, i, 0], map[rotateIndex, i, 1], 0);
-            Vector3 newPos = new Vector3(parentLoc.x + localNewPos.x, parentLoc.y + localNewPos.y, transform.position.z);
+            Vector3 newPos = new Vector3(parentLoc.x + localNewPos.x, parentLoc.y + localNewPos.y, 0);
             GameObject blockInRight = GameObject.Find($"{newPos.x + 1},{newPos.y}");
             GameObject blockInLeft = GameObject.Find($"{newPos.x - 1},{newPos.y}");
             GameObject blockInBottom = GameObject.Find($"{newPos.x},{newPos.y - 1}");
-            Debug.Log($"{newPos.x},{newPos.y}");
-            if (newPos.x >= RIGHT_WALL_X + 1 || (blockInRight != null && blockInRight.transform.parent != transform)) {
-                newPosOverRightWallLevel = Mathf.Max(newPosOverRightWallLevel, (int)(newPos.x) - RIGHT_WALL_X);
+
+            if (newPos.x >= RIGHT_WALL_X || (blockInRight != null && blockInRight.transform.parent != transform)) {
+                newPosOverRightWallLevel++;
             }
-            if (newPos.x <= LEFT_WALL_X - 1 || (blockInLeft != null && blockInLeft.transform.parent != transform)) {
-                newPosOverLeftWallLevel = Mathf.Abs(Mathf.Min(newPosOverLeftWallLevel, (int)(newPos.x) - LEFT_WALL_X));
+            if (newPos.x <= LEFT_WALL_X || (blockInLeft != null && blockInLeft.transform.parent != transform)) {
+                newPosOverLeftWallLevel++;
             }
-            if (newPos.y <= BOTTOM_WALL_Y - 1 || (blockInBottom != null && blockInBottom.transform.parent != transform)) {
-                newPosOverBottomWallLevel = Mathf.Abs(Mathf.Min(newPosOverBottomWallLevel, (int)(newPos.y) - BOTTOM_WALL_Y));
+            if (newPos.y <= BOTTOM_WALL_Y || (blockInBottom != null && blockInBottom.transform.parent != transform)) {
+                newPosOverBottomWallLevel++;
             }
+
             newPosList.Add(localNewPos);
         }
-        Debug.Log($"{newPosOverRightWallLevel},{newPosOverRightWallLevel},{newPosOverBottomWallLevel}");
 
         Vector3 newParentPos = new Vector3(transform.position.x, transform.position.y, transform.position.z);
 
@@ -173,24 +178,39 @@ public class BlockController : MonoBehaviour {
         }
     }
 
-    void SpeedDescendBlock() {
-        for (int y = -9; y < (int)(parentLoc.y); y++) {
-            bool canDescend = true;
+    void CalculatePossibleBottomPos() {
+        int lowestY = (int)parentLoc.y;
+        for (int y = (int)parentLoc.y; y > BOTTOM_WALL_Y; y--) {
+            bool isValid = true;
             for (int i = 0; i < 4; i++) {
-                GameObject block = childBlockList[i];
-                Vector3 pos = new Vector3(parentLoc.x + block.transform.localPosition.x, y + block.transform.localPosition.y, 0);
-                GameObject blockInGoal = GameObject.Find($"{pos.x},{pos.y}");
-                if ((blockInGoal != null && blockInGoal.transform.parent != transform) || pos.y < BOTTOM_WALL_Y) {
-                    canDescend = false;
+                SingleBlock block = childBlockList[i].GetComponent<SingleBlock>();
+                Vector3 tryPos = new Vector3(parentLoc.x + map[rotateIndex, i, 0], y + map[rotateIndex, i, 1], 0);
+                GameObject blockInTryPos = GameObject.Find($"{(int)tryPos.x},{(int)tryPos.y}");
+                if (tryPos.y <= BOTTOM_WALL_Y || (blockInTryPos != null && blockInTryPos.transform.parent != transform)) {
+
+                    isValid = false;
                 }
             }
-            if (canDescend) {
-                transform.position = new Vector3(transform.position.x, y + 0.5f, 0);
-                isBottomOccupied = true;
-                Register();
+            if (isValid) {
+                lowestY = y;
+            } else {
                 break;
             }
         }
+
+        for (int i = 0; i < 4; i++) {
+            Vector3 lowestPos = new Vector3(parentLoc.x + map[rotateIndex, i, 0], lowestY + map[rotateIndex, i, 1], 0);
+            GameObject previewBlock = GameObject.Find($"previewBlock_{i + 1}");
+            previewBlock.transform.position = new Vector3(lowestPos.x + 0.5f, lowestPos.y + 0.5f, 0);
+            previewBlock.GetComponent<SpriteRenderer>().enabled = true;
+        }
+    }
+
+    void SpeedDescendBlock() {
+        transform.position = GameObject.Find($"previewBlock_2").transform.position;
+        Register();
+        CheckReachBottom();
+        CheckLock();
     }
 
     void DescendBlock() {
@@ -203,6 +223,8 @@ public class BlockController : MonoBehaviour {
         while (!isBottomOccupied) {
             transform.position = new Vector3(transform.position.x, Mathf.Ceil(transform.position.y - 1) - 0.5f, transform.position.z);
             Register();
+            CheckReachBottom();
+            CheckLock();
             yield return new WaitForSeconds(fallInterval);
         }
     }
@@ -231,20 +253,28 @@ public class BlockController : MonoBehaviour {
         return isLeftOccupied;
     }
 
-    void CheckCanDescend() {
-        foreach (Transform block in transform) {
+    void CheckReachBottom () {
+        bool isReachedBottom = false;
+        foreach(Transform block in transform) {
             SingleBlock singleBlock = block.GetComponent<SingleBlock>();
             GameObject bottomGoalBlock = GameObject.Find($"{singleBlock.x},{singleBlock.y - 1}");
-
-            if (singleBlock.y == -9) {
-                isBottomOccupied = true;
-            }
-
-            if (bottomGoalBlock != null && bottomGoalBlock.transform.parent != transform) {
-                isBottomOccupied = true;
+            
+            if (singleBlock.y <= BOTTOM_WALL_Y + 1 || (bottomGoalBlock != null && bottomGoalBlock.transform.parent != transform)) {
+                isReachedBottom = true;
             }
         }
+
+        isBottomOccupied = isReachedBottom;
     }
+
+    async void CheckLock() {
+        await Task.Delay(300);
+        CheckReachBottom();
+        if (isBottomOccupied) {
+            isLocked = true;
+        }
+    }
+
 
     void Register() {
         parentLoc = new Vector3(transform.position.x - 0.5f, transform.position.y - 0.5f, 0);
@@ -252,10 +282,6 @@ public class BlockController : MonoBehaviour {
             SingleBlock singleBlock = block.GetComponent<SingleBlock>();
             Vector3 blockLoc = new Vector3(parentLoc.x + block.localPosition.x, parentLoc.y + block.localPosition.y, 0);
             singleBlock.RegisterBlockPos(blockLoc);
-        }
-        if (isBottomOccupied) {
-            StopCoroutine(blockDescendCoroutine);
-            spawnBlock.resetIsSpawned();
         }
     }
 

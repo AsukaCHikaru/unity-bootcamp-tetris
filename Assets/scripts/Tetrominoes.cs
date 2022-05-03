@@ -35,7 +35,7 @@ namespace Tetrominoes {
 
             if (blockType == BlockTypeList.square_block) {
                 int[,,] square_map = new int[,,] {
-                    { { 0, 0 }, { 0, 1 }, { 1, 1 }, { 1, 0 } },
+                    { { 0, 1 }, { 0, 0 }, { 1, 1 }, { 1, 0 } },
                 };
                 return square_map;
             }
