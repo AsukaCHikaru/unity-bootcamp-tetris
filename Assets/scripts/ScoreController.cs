@@ -34,7 +34,7 @@ public class ScoreController : MonoBehaviour {
         }
         
         foreach(GameObject block in all) {
-            Destroy(block);
+            block.GetComponent<SingleBlock>().DestroyBlock();
         }
     }
 
