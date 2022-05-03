@@ -24,7 +24,7 @@ public class SingleBlock : MonoBehaviour {
 
     public void DestroyBlock() {
         _transparentCoroutine = ColorTransparentCoroutine();
-        StartCoroutine(_transparentCoroutine);   
+        StartCoroutine(_transparentCoroutine);
     }
 
     IEnumerator ColorTransparentCoroutine() {

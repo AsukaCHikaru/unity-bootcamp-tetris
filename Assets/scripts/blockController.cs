@@ -189,7 +189,8 @@ public class BlockController : MonoBehaviour {
             }
             if (isValid) {
                 lowestY = y;
-            } else {
+            }
+            else {
                 break;
             }
         }
@@ -249,12 +250,12 @@ public class BlockController : MonoBehaviour {
         return isLeftOccupied;
     }
 
-    void CheckReachBottom () {
+    void CheckReachBottom() {
         bool isReachedBottom = false;
-        foreach(Transform block in transform) {
+        foreach (Transform block in transform) {
             SingleBlock singleBlock = block.GetComponent<SingleBlock>();
             GameObject bottomGoalBlock = GameObject.Find($"{singleBlock.x},{singleBlock.y - 1}");
-            
+
             if (singleBlock.y <= tetrominoConsts.BOTTOM_WALL_Y + 1 || (bottomGoalBlock != null && bottomGoalBlock.transform.parent != transform)) {
                 isReachedBottom = true;
             }
@@ -267,11 +268,21 @@ public class BlockController : MonoBehaviour {
         await Task.Delay(300);
         CheckReachBottom();
         if (isBottomOccupied) {
-            isLocked = true;
-            spawnBlock.resetIsSpawned();
-            scoreController.CheckCompleteLine();
-            Destroy(this);
+            Lock();
         }
+    }
+
+    void Lock() {
+        isLocked = true;
+
+        childBlockList[0].transform.parent = GameObject.Find("LockedBlocks").transform;
+        childBlockList[1].transform.parent = GameObject.Find("LockedBlocks").transform;
+        childBlockList[2].transform.parent = GameObject.Find("LockedBlocks").transform;
+        childBlockList[3].transform.parent = GameObject.Find("LockedBlocks").transform;
+
+        scoreController.CheckCompleteLine();
+        spawnBlock.resetIsSpawned();
+        Destroy(this.gameObject);
     }
 
 

@@ -27,7 +27,7 @@ public class ScoreController : MonoBehaviour {
                 all.AddRange(row);
             }
         }
-
+        
         int numCompletedLines = all.Count / 10;
         if (numCompletedLines >= 1) {
             CalculateScore(numCompletedLines);
