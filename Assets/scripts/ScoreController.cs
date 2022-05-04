@@ -12,11 +12,13 @@ public class ScoreController : MonoBehaviour {
     public int? highestCompletedY;
     public int completedLines = 0;
     public int highScore;
+    LevelController levelController;
 
     void Start() {
         text = GameObject.Find("score_ui").transform.Find("text").GetComponent<TextMeshProUGUI>();
         spawnBlock = GetComponent<SpawnBlock>();
         highScore = PlayerPrefs.GetInt("highscore");
+        levelController = GameObject.Find("GameController").GetComponent<LevelController>();
     }
 
     public void CheckCompleteLine() {
@@ -47,11 +49,14 @@ public class ScoreController : MonoBehaviour {
             block.GetComponent<SingleBlock>().DestroyBlock();
         }
     }
-
+    
     void CalculateScore(int numCompletedLines) {
         score += numCompletedLines * 100;
         text.text = score.ToString();
         CalculateHighScore();
+        for(int i = 0; i < numCompletedLines; i++) {
+            levelController.GainExperience();
+        }
     }
 
     void CalculateHighScore() {

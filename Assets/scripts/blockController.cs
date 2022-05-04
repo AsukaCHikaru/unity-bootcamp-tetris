@@ -20,7 +20,6 @@ public class BlockController : MonoBehaviour {
     int[,,] map;
 
     int rotateIndex = 0;
-    private float fallInterval = 0.5f;
     public float moveSpeed = 5.0f;
     private bool isBottomOccupied = false;
     private bool isLocked = false;
@@ -46,14 +45,15 @@ public class BlockController : MonoBehaviour {
     ScoreController scoreController;
 
     GameOver gameOver;
+    LevelController levelController;
 
     void Start() {
         GameObject gameController = GameObject.Find("GameController");
         spawnBlock = gameController.GetComponent<SpawnBlock>();
         scoreController = gameController.GetComponent<ScoreController>();
         gameOver = gameController.GetComponent<GameOver>();
-
         map = positionMap.GetMap(blockType);
+        levelController = gameController.GetComponent<LevelController>();
     }
 
     private void Update() {
@@ -236,7 +236,7 @@ public class BlockController : MonoBehaviour {
 
     IEnumerator DescendBlockCoroutine() {
         while (!isBottomOccupied && !gameOver.isGameOver) {
-            yield return new WaitForSeconds(fallInterval);
+            yield return new WaitForSeconds(levelController.GetFallInterfal());
             transform.position = new Vector3(transform.position.x, Mathf.Ceil(transform.position.y - 1) - 0.5f, transform.position.z);
             Register();
             CheckReachBottom();
