@@ -24,7 +24,6 @@ public class GameOver : MonoBehaviour
 
     async Task ShowOverlay () {
         await Task.Delay(500);
-        Debug.Log(OverlayUI);
         score_text.text = scoreController.score.ToString();
         OverlayUI.SetActive(true);
     }

@@ -11,10 +11,12 @@ public class ScoreController : MonoBehaviour {
     TextMeshProUGUI text;
     public int? highestCompletedY;
     public int completedLines = 0;
+    public int highScore;
 
     void Start() {
         text = GameObject.Find("score_ui").transform.Find("text").GetComponent<TextMeshProUGUI>();
         spawnBlock = GetComponent<SpawnBlock>();
+        highScore = PlayerPrefs.GetInt("highscore");
     }
 
     public void CheckCompleteLine() {
@@ -32,27 +34,35 @@ public class ScoreController : MonoBehaviour {
                 all.AddRange(row);
             }
         }
-        
+
         completedLines = all.Count / 10;
         if (completedLines >= 1) {
             CalculateScore(completedLines);
-        } else {
+        }
+        else {
             spawnBlock.resetIsSpawned();
         }
-        
-        foreach(GameObject block in all) {
+
+        foreach (GameObject block in all) {
             block.GetComponent<SingleBlock>().DestroyBlock();
         }
     }
 
-    void CalculateScore (int numCompletedLines) {
+    void CalculateScore(int numCompletedLines) {
         score += numCompletedLines * 100;
         text.text = score.ToString();
+        CalculateHighScore();
     }
 
-    public void Reset () {
+    void CalculateHighScore() {
+        if (score > highScore) {
+            PlayerPrefs.SetInt("highscore", score);
+            GameObject.Find("score_ui").transform.Find("high").gameObject.SetActive(true);
+        }
+    }
+
+    public void Reset() {
         highestCompletedY = null;
         completedLines = 0;
     }
-
 }
