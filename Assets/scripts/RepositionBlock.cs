@@ -20,7 +20,6 @@ public class RepositionBlock : MonoBehaviour {
         Debug.Log("ismoving");
         int? highestY = scoreController.highestCompletedY;
         int completedLines = scoreController.completedLines;
-        Debug.Log($"{highestY},{completedLines}");
         Transform lockedBlocks = GameObject.Find("LockedBlocks").transform;
 
         foreach (Transform block in lockedBlocks) {

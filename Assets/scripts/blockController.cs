@@ -79,7 +79,6 @@ public class BlockController : MonoBehaviour {
         Debug.Log("block controller spawn");
         Register();
         CheckGameOver();
-        Debug.Log(gameOver.isGameOver);
         if (!gameOver.isGameOver) {
             CalculatePossibleBottomPos();
             isSpawned = true;
