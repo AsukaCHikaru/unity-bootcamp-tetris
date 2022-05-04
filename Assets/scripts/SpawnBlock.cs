@@ -5,6 +5,10 @@ using UnityEngine;
 public class SpawnBlock : MonoBehaviour {
     private bool isSpawned = false;
     public List<GameObject> nextBlockList = new List<GameObject>();
+    public GameObject holdBlock;
+    private float inputInterval = 0.2f;
+    private bool isInInputInterval = false;
+    private IEnumerator _inputIntervalCoroutine;
 
     [SerializeField]
     private List<GameObject> blockList;
@@ -26,6 +30,14 @@ public class SpawnBlock : MonoBehaviour {
     void Update() {
         if (!isSpawned) {
             Spawn();
+        }
+
+        if (Input.GetKey(KeyCode.F)) {
+            if (!isInInputInterval) {
+                _inputIntervalCoroutine = InputIntervalCoroutine();
+                StartCoroutine(_inputIntervalCoroutine);
+                HandleHoldClock();
+            }
         }
     }
 
@@ -50,11 +62,11 @@ public class SpawnBlock : MonoBehaviour {
         block.transform.parent = GameObject.Find("Blocks").transform;
         Debug.Log(blockController);
         blockController.Spawn();
-        
+
         nextBlockList.RemoveAt(0);
-        
+
         Queue(5);
-        
+
         for (int i = 0; i < 5; i++) {
             nextBlockList[i].transform.position = GameObject.Find($"nextListLoc_{i + 1}").transform.position;
         }
@@ -67,5 +79,48 @@ public class SpawnBlock : MonoBehaviour {
         foreach (Transform block in listTransform) {
             Destroy(block.gameObject);
         }
+    }
+
+    public void ClearHold () {
+        holdBlock = null;
+    }
+
+    public void HandleHoldClock() {
+        if (holdBlock != null) {
+            ReturnHoldBlock();
+        }
+        else {
+            HoldBlock();
+        }
+    }
+
+    public void HoldBlock() {
+        GameObject block = nextBlockList[0];
+        block.transform.position = GameObject.Find("holdLoc").transform.position;
+        holdBlock = block;
+        nextBlockList.RemoveAt(0);
+        Queue(5);
+        for (int i = 0; i < 5; i++) {
+            nextBlockList[i].transform.position = GameObject.Find($"nextListLoc_{i + 1}").transform.position;
+        }
+    }
+
+    public void ReturnHoldBlock() {
+        GameObject block = holdBlock;
+        holdBlock = null;
+        Debug.Log(holdBlock);
+        nextBlockList.Insert(0, block);
+        Debug.Log(nextBlockList[0]);
+        Debug.Log(nextBlockList[5]);
+        nextBlockList.RemoveAt(5);
+        for (int i = 0; i < 5; i++) {
+            nextBlockList[i].transform.position = GameObject.Find($"nextListLoc_{i + 1}").transform.position;
+        }
+    }
+
+    IEnumerator InputIntervalCoroutine() {
+        isInInputInterval = true;
+        yield return new WaitForSeconds(inputInterval);
+        isInInputInterval = false;
     }
 }

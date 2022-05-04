@@ -43,6 +43,7 @@ public class TitleSceneController : MonoBehaviour
 
         spawnBlock.ClearNextList();
         spawnBlock.resetIsSpawned();
+        spawnBlock.ClearHold();
 
         for (int i = 0; i < 5; i++) {
             spawnBlock.Queue(i + 1);
