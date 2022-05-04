@@ -14,9 +14,11 @@ public class SpawnBlock : MonoBehaviour {
         }
     }
 
-    void Queue(int i) {
+    public void Queue(int i) {
+        Debug.Log("queue");
         Vector3 nextBlockPos = GameObject.Find($"nextListLoc_{i}").transform.position;
         GameObject block = Instantiate(getRandomBlock(), nextBlockPos, Quaternion.identity);
+        block.transform.parent = GameObject.Find("NextList").transform.Find("list").transform;
         nextBlockList.Add(block);
         block.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
     }
@@ -37,7 +39,7 @@ public class SpawnBlock : MonoBehaviour {
     }
 
     void Spawn() {
-        Debug.Log("spawn");
+        Debug.Log("spawn new block");
         isSpawned = true;
         GameObject block = nextBlockList[0];
         BlockController blockController = block.GetComponent<BlockController>();
@@ -46,11 +48,24 @@ public class SpawnBlock : MonoBehaviour {
         block.transform.position = new Vector3(spawnPos.x, spawnPos.y, 0);
         block.transform.localScale = new Vector3(1, 1, 1);
         block.transform.parent = GameObject.Find("Blocks").transform;
+        Debug.Log(blockController);
         blockController.Spawn();
+        
         nextBlockList.RemoveAt(0);
+        
         Queue(5);
+        
         for (int i = 0; i < 5; i++) {
             nextBlockList[i].transform.position = GameObject.Find($"nextListLoc_{i + 1}").transform.position;
+        }
+    }
+
+    public void ClearNextList() {
+        Debug.Log("clear next list");
+        nextBlockList.RemoveAll((GameObject) => true);
+        Transform listTransform = GameObject.Find("NextList").transform.Find("list").transform;
+        foreach (Transform block in listTransform) {
+            Destroy(block.gameObject);
         }
     }
 }

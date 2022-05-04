@@ -76,8 +76,10 @@ public class BlockController : MonoBehaviour {
     }
 
     public void Spawn() {
+        Debug.Log("block controller spawn");
         Register();
         CheckGameOver();
+        Debug.Log(gameOver.isGameOver);
         if (!gameOver.isGameOver) {
             CalculatePossibleBottomPos();
             isSpawned = true;
@@ -306,6 +308,7 @@ public class BlockController : MonoBehaviour {
 
 
     void Register() {
+        Debug.Log("register");
         parentLoc = new Vector3(transform.position.x - 0.5f, transform.position.y - 0.5f, 0);
         foreach (Transform block in transform) {
             SingleBlock singleBlock = block.GetComponent<SingleBlock>();
@@ -321,15 +324,17 @@ public class BlockController : MonoBehaviour {
     }
 
     void CheckGameOver() {
+        Debug.Log("check game over");
         foreach (Transform block in transform) {
             SingleBlock singleBlock = block.GetComponent<SingleBlock>();
             GameObject[] blocksInPos = GameObject.FindGameObjectsWithTag("Block");
             int numBlocksInSamePos = 0;
             foreach(GameObject block2 in blocksInPos) {
-                if (block2.name == $"{singleBlock.x},{singleBlock.y}") {
+                if (block2.name == $"{singleBlock.x},{singleBlock.y}" && block2.transform.parent != transform) { 
                     numBlocksInSamePos++;
                 }
             }
+            Debug.Log($"numblockinsamepos, {numBlocksInSamePos}");
             if (singleBlock.y >= tetrominoConsts.TOP_WALL_Y || numBlocksInSamePos > 1) {
                 gameOver.Over();
             }

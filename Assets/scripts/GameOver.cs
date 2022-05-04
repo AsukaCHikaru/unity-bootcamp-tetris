@@ -27,4 +27,13 @@ public class GameOver : MonoBehaviour
         score_text.text = scoreController.score.ToString();
         OverlayUI.SetActive(true);
     }
+
+    public void HideOverlay () {
+        score_text.text = "0";
+        OverlayUI.SetActive(false);
+    }
+
+    public void ResetGameOver () {
+        isGameOver = false;
+    }
 }
